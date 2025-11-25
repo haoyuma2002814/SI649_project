@@ -358,7 +358,7 @@ def load_curry_shotchart_data():
 def create_zone_legend_court():
     """Create a half-court diagram showing the shot zones used in the app."""
     fig = go.Figure()
-
+    
     # Court dimensions (simplified half court, feet)
     x_min, x_max = -25, 25
     y_min, y_max = -5, 47  # include small backcourt area
@@ -402,6 +402,39 @@ def create_zone_legend_court():
     # Half-court line
     fig.add_shape(type="line", x0=x_min, x1=x_max, y0=baseline_y, y1=baseline_y, line=dict(color="black", width=2))
 
+    # Add hoops / key details for polish
+    fig.add_shape(
+        type="circle",
+        xref="x",
+        yref="y",
+        x0=-3,
+        x1=3,
+        y0=-1.5,
+        y1=4.5,
+        line=dict(color="#1f1f1f", width=1.5),
+        fillcolor="rgba(255,255,255,0.4)",
+    )
+    fig.add_annotation(
+        x=0,
+        y=1.5,
+        text="Hoop",
+        showarrow=False,
+        font=dict(color="#1f1f1f", size=12),
+    )
+
+    # Legend entries (dummy traces for each zone, to show colors in legend)
+    for zone in ZONE_ORDER:
+        fig.add_trace(
+            go.Scatter(
+                x=[None],
+                y=[None],
+                mode="markers",
+                marker=dict(size=10, color=ZONE_COLORS[zone]),
+                name=zone,
+                showlegend=True,
+            )
+        )
+
     fig.update_xaxes(
         visible=False,
         range=[x_min, x_max],
@@ -419,11 +452,20 @@ def create_zone_legend_court():
             "x": 0,
             "xanchor": "left",
         },
+        font=dict(family="Lato, 'Open Sans', sans-serif", size=13, color="#1f1f1f"),
         plot_bgcolor="white",
         paper_bgcolor="white",
-        showlegend=False,
-        margin=dict(l=40, r=40, t=80, b=80),
-        height=500,
+        showlegend=True,
+        legend=dict(
+            orientation="h",
+            yanchor="top",
+            y=-0.1,          # push legend below the court
+            xanchor="center",
+            x=0.5,
+            font=dict(size=11),
+        ),
+        margin=dict(l=40, r=40, t=60, b=100),
+        height=450,
     )
 
     return fig
@@ -485,7 +527,8 @@ def create_distribution_chart(df, title, entity_name="League Average"):
             categoryarray=SEASONS,  # Use global SEASONS to show full timeline
             automargin=True,
             showgrid=True,
-            gridcolor='lightgray',
+            gridcolor='#f0f0f0',
+            linecolor='#888888',
             fixedrange=False
         ),
         yaxis=dict(
@@ -494,7 +537,8 @@ def create_distribution_chart(df, title, entity_name="League Average"):
             tickformat='.0%',
             tickfont=dict(size=14),
             showgrid=True,
-            gridcolor='lightgray'
+            gridcolor='#f0f0f0',
+            linecolor='#888888'
         ),
         legend=dict(
             title='Shot Zone',
@@ -508,8 +552,15 @@ def create_distribution_chart(df, title, entity_name="League Average"):
         ),
         hovermode='closest',
         plot_bgcolor='white',
+        paper_bgcolor='white',
         height=600,
-        margin=dict(l=80, r=250, t=100, b=120)
+        margin=dict(l=80, r=250, t=100, b=120),
+        showlegend=False,
+        font=dict(family="Lato, 'Open Sans', sans-serif", size=13, color='#1f1f1f'),
+        hoverlabel=dict(
+            bgcolor='#1f1f1f',
+            font=dict(size=12, color='white')
+        )
     )
     
     # Add event markers only if viewing League Average
@@ -670,9 +721,10 @@ def create_shot_chart(df_shots, selected_season):
     view_state = pdk.ViewState(
         latitude=LAT_CENTER + (100 * SCALE),
         longitude=LON_CENTER,
-        zoom=14.5,          # Zoomed out slightly to see full court
+        zoom=16,          # Default zoom to show entire half court
         pitch=50,           # Tilted for 3D effect
-        bearing=0
+        bearing=0,
+
     )
     
     # Tooltip
@@ -799,18 +851,33 @@ def create_trend_comparison_chart(df_league, df_players, selected_players):
 # ============================================================================
 
 def main():
-    st.title("🏀 NBA Shot Selection Evolution (2000–2025)")
-    st.markdown("""
-    This application visualizes how NBA shot selection and scoring geometry have changed 
-    from 2000 to the present, using data from the NBA API.
+    st.title("Stephen Curry and the Three-Point Revolution")
     
-    **Visualizations included:**
-    1. League-wide shot distribution timeline (2000–2025)
-    2. Event-driven turning points (annotated timeline)
-    3. Player-level shot selection evolution
-    4. Interactive shot-chart heatmaps for Stephen Curry
+    st.markdown("""
+    Stephen Curry is widely regarded as the greatest shooter in basketball history, and he is 
+    > *“credited with revolutionizing the game by popularizing the three-point shot across all levels”* 
+    > ([Wikipedia](https://en.wikipedia.org)). 
+    
+    The data back this up: when the NBA first adopted the 3-point line in 1979, teams averaged only about 
+    **2.8** three-point attempts per game. By 2024–25, that number has exploded to roughly **37–38** 
+    three-point attempts per game ([Wikipedia](https://en.wikipedia.org), [WBUR](https://www.wbur.org)). 
+    
+    As one analyst noted, Curry has become:
+    > *“perhaps the figurehead in the NBA’s Three-Point Revolution™”* 
+    > ([FiveThirtyEight](https://fivethirtyeight.com)).
+    """)
+
+    st.markdown("""
+    In short, the style of play that Curry and the Golden State Warriors exemplified – high-volume, 
+    deep shooting – has spread across the league. Teams shot **22.4** threes per game in 2014-15, but 
+    by the 2024-25 season that had risen to **37.6** ([WBUR](https://www.wbur.org)), and many coaches 
+    now prioritize spacing and threes over older mid-range strategies. Some commentators joke we’re 
+    even seeing more threes than twos – one analyst quipped that we might as well rename it the 
+    “two-point line” ([WBUR](https://www.wbur.org)).
     """)
     
+    st.divider()
+
     # Sidebar for data management
     st.sidebar.title("⚙️ Data Management")
     
@@ -846,8 +913,6 @@ def main():
         st.rerun()
     
     # Load data
-    st.header("📊 Data Loading")
-    
     with st.spinner("Loading data..."):
         df_league_raw = load_league_data()
         df_league = process_league_data(df_league_raw) if df_league_raw is not None else None
@@ -858,8 +923,26 @@ def main():
         df_curry_shots = load_curry_shotchart_data()
     
     # Visualization 1: Shot Distribution Evolution
-    st.header("1️⃣ Shot Distribution Evolution")
-    st.markdown("Select **League Average** to see the overall trend, or pick a **Player** to compare individual shot selection evolution.")
+    st.header("1️⃣ The Data Tell the Story: Shot Selection Shift")
+    
+    with st.container():
+        st.info("""
+        **Context:** In 2014–15, Curry’s Warriors led the league in 3-point volume and won a championship. 
+        Analysis of that season shows that the Warriors took many more threes than any other team – 
+        and they scored huge value from them. That year, all of the top 3-point shooting teams made 
+        the conference finals ([FiveThirtyEight](https://fivethirtyeight.com)). 
+        
+        *In other words, teams that shot a lot of threes and hit them at a high rate tended to win; 
+        the correlation between 3-point rate and winning percentage was the highest ever recorded* 
+        ([FiveThirtyEight](https://fivethirtyeight.com)).
+        
+        Golden State’s deep shooting and ball-movement offense proved to be a championship formula, 
+        and other teams took notice.
+        """)
+
+    st.markdown(
+        "Use the dropdown to switch between **League Average** and individual players to see this shift."
+    )
 
     # Prepare selection options
     options = ["League Average"]
@@ -875,7 +958,7 @@ def main():
     if selected_entity == "League Average":
         if df_league is not None:
             current_df = df_league
-            chart_title = 'League-wide Shot Distribution by Zone with Key Events (2000–2025)'
+            chart_title = 'League-wide Shot Distribution by Zone (2000–2025)'
     else:
         if df_players is not None:
             current_df = df_players[df_players['PLAYER_NAME'] == selected_entity]
@@ -890,7 +973,8 @@ def main():
             entity_name=selected_entity
         )
 
-        col_chart, col_legend = st.columns([2.5, 1.5])
+        # Use a slightly wider left panel while keeping the right panel readable
+        col_chart, col_legend = st.columns([3, 2])
         with col_chart:
             st.plotly_chart(fig1, width='stretch')
         with col_legend:
@@ -956,10 +1040,46 @@ def main():
     else:
         st.warning(f"Data not available for {selected_entity}. Please refresh to fetch from NBA API.")
     
+    st.divider()
+
     # Visualization 2: The Curry Effect Comparison
-    st.header("2️⃣ The 3-Point Revolution: Curry vs. The League")
-    st.markdown("See how Stephen Curry's 3-point volume skyrocketed compared to the league average, driving the modern era's strategic shift.")
+    st.header("2️⃣ Curry’s Individual Impact & Records")
     
+    st.markdown("""
+    Curry’s individual shooting numbers have consistently defied expectations. 
+    He broke Ray Allen’s single-season 3-point record (**269**) during the 2012–13 season (with **272** threes), 
+    and then smashed that record again with **402** threes in 2015–16 ([NBA.com](https://www.nba.com)).
+    """)
+
+    st.markdown("### Efficiency at Scale")
+    st.markdown("""
+    Remarkably, as Curry’s shot volume went up, his efficiency did not drop. By late 2015, Curry was 
+    attempting nearly **29** field goals (15.5 threes) per 100 possessions – career highs – yet his shooting 
+    percentage actually improved ([FiveThirtyEight](https://fivethirtyeight.com)). 
+    
+    Analysts have shown that Curry’s enormous volume combined with elite shooting added far more scoring 
+    value than any other player. In one study of 2014–15 data:
+    - **Stephen Curry:** Accumulated **371** “points added” from efficient shooting (on ~1,600 shots)
+    - **Kyle Korver:** Next highest, with **247** points added
+    
+    Data analysis illustrates that Curry’s unprecedented range and volume put him in a class of his own: 
+    he remained a deadly efficient shooter even as his offensive load soared.
+    """)
+
+    st.success("""
+    **Curry vs. The Field**
+    
+    Curry’s shooting records extend to career totals. In fact, Curry needed only **762** games to surpass 
+    Reggie Miller’s total (which took Miller 1,389 games) ([NBA.com](https://www.nba.com)). 
+    
+    - On **January 12, 2022**, Curry broke Ray Allen’s all-time record to become the NBA’s career leader in 3-pointers.
+    - By **2025**, he has led the league in total 3-pointers made a record **eight times**.
+    
+    These milestones underline how rapidly and consistently Curry has hit long-range shots compared to any predecessor.
+    """)
+    
+    st.markdown("**Compare Curry's 3-Point Attempt Rate (3PAR) to the League Average and other stars:**")
+
     if df_league is not None and df_players is not None:
         # Multi-select for other players
         available_stars = sorted([p for p in df_players['PLAYER_NAME'].unique() if p != 'Stephen Curry'])
@@ -976,8 +1096,28 @@ def main():
     else:
         st.warning("Data not available for comparison chart.")
 
-    # Visualization 3: Stephen Curry shot chart (Renumbered)
-    st.header("3️⃣ Stephen Curry Shot Chart by Season")
+    st.divider()
+
+    # Visualization 3: Stephen Curry shot chart
+    st.header("3️⃣ Beyond the Numbers: Reshaping the Game")
+    st.markdown("""
+    Curry’s impact goes beyond just raw numbers; he reshaped how the game is played. 
+    His shooting range and quick release forced defenses to guard him out to 30 feet. 
+    
+    **Key indicators of the shift:**
+    - **Pull-up Revolution:** Over eight seasons of tracking data, **54%** of Curry’s 3-point attempts were pull-up jumpers (shots off the dribble), showcasing that he created his own looks and thrived under pressure.
+    - **League Follows Suit:** League-wide, the share of pull-up threes jumped from about **23%** in 2013–14 to a peak of **30%** by 2019–20, as other players emulated his style.
+    - **The Math of Moreyball:** Coaches like Mike D’Antoni and Daryl Morey seized on the math: when a roughly 35% three-point shot is often worth more points than a 40% long two, it makes sense to “take the smart ones” – i.e., shoot threes.
+    
+    By 2017–18 the Houston Rockets were attempting about **50%** of their shots from three (the NBA’s first 50%-of-shots 3-point rate). Today almost every team plays “pace and space”: in 2024–25, the Boston Celtics even became the first team in history to attempt more threes than twos in a game ([WBUR](https://www.wbur.org)). 
+    
+    In short, Curry’s success convinced teams and players at all levels to shoot from farther out, and now long-range shooting dominates the NBA landscape.
+    """)
+
+    st.markdown("""
+    ### 3D Shot Map: Where Curry Bends the Defense
+    Explore the 3D map below to see the volume and location of Curry's shots. Note the density beyond the arc.
+    """)
     
     if df_curry_shots is not None and not df_curry_shots.empty:
         seasons_available = sorted(df_curry_shots['SEASON'].unique())
@@ -1023,6 +1163,39 @@ def main():
     else:
         st.warning("Curry shot chart data not available. Please refresh to fetch from NBA API.")
     
+    st.divider()
+
+    # Conclusion and Sources
+    st.header("Questions & Conclusion")
+    
+    st.warning("""
+    **The ongoing debate:**
+    Some fans and even players have lamented an overload of 3-point shooting (worse ratings or “boring” offense). 
+    Stars like LeBron James and NBA commissioner Adam Silver have publicly mused about whether teams are taking 
+    too many threes. Such debates show how deeply Curry has changed the game: what used to be a rare, exciting play has become commonplace. 
+    
+    *But on balance his influence has opened up basketball. As one analyst put it, the 3-point line has “made the sport better” by diversifying play and rewarding perimeter skill.*
+    """)
+
+    st.success("""
+    **Conclusion**
+    
+    Stephen Curry’s career is a chronicle of a shooting revolution in action. Through astonishing statistics and 
+    championship success, he forced every team to re-think offense. The Warriors’ four titles in eight years 
+    (with Curry as the star) have made “lots of threes” into a winning blueprint. 
+    
+    Even youth basketball and the WNBA have moved their lines back to emulate today’s range. Whether his influence 
+    is universally loved or debated, one thing is clear: **Curry’s unprecedented shooting ability has permanently 
+    shifted the NBA toward a game where the three-point shot is the most potent weapon on the floor.**
+    """)
+
+    st.caption("""
+    **Sources:**
+    Authoritative sports analytics and journalism sources document Curry’s impact and league trends, including:
+    [FiveThirtyEight](https://fivethirtyeight.com), [NBA.com Analysis](https://www.nba.com), 
+    [WBUR Commentary](https://www.wbur.org), and [Wikipedia](https://en.wikipedia.org).
+    """)
+
     # Footer
     st.markdown("---")
     st.markdown("""
