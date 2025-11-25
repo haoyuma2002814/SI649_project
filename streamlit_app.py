@@ -184,7 +184,7 @@ def process_league_data(df_league_raw):
     
     if df_league_long.empty:
         return None
-        
+    
     # Aggregate by season and zone
     df_league = (
         df_league_long
@@ -354,6 +354,81 @@ def load_curry_shotchart_data():
 # VISUALIZATION FUNCTIONS
 # ============================================================================
 
+
+def create_zone_legend_court():
+    """Create a half-court diagram showing the shot zones used in the app."""
+    fig = go.Figure()
+
+    # Court dimensions (simplified half court, feet)
+    x_min, x_max = -25, 25
+    y_min, y_max = -5, 47  # include small backcourt area
+
+    def add_zone_rect(x0, x1, y0, y1, zone_name):
+        fig.add_shape(
+            type="rect",
+            x0=x0,
+            x1=x1,
+            y0=y0,
+            y1=y1,
+            line=dict(width=0),
+            fillcolor=ZONE_COLORS[zone_name],
+            layer="below",
+        )
+
+    baseline_y = 0
+
+    # Backcourt
+    add_zone_rect(x_min, x_max, y_min, baseline_y, "Backcourt")
+
+    # Above the Break 3 (top band)
+    add_zone_rect(x_min, x_max, 22, y_max, "Above the Break 3")
+
+    # Mid-Range band (inside arc but outside the paint)
+    add_zone_rect(-22, 22, baseline_y, 22, "Mid-Range")
+
+    # Corners 3
+    add_zone_rect(x_min, -22, baseline_y, 22, "Left Corner 3")
+    add_zone_rect(22, x_max, baseline_y, 22, "Right Corner 3")
+
+    # Paint (Non-RA)
+    add_zone_rect(-8, 8, 8, 16, "In The Paint (Non-RA)")
+
+    # Restricted Area (inner paint)
+    add_zone_rect(-4, 4, baseline_y, 8, "Restricted Area")
+
+    # Court outline
+    fig.add_shape(type="rect", x0=x_min, x1=x_max, y0=baseline_y, y1=y_max, line=dict(color="black", width=2))
+
+    # Half-court line
+    fig.add_shape(type="line", x0=x_min, x1=x_max, y0=baseline_y, y1=baseline_y, line=dict(color="black", width=2))
+
+    fig.update_xaxes(
+        visible=False,
+        range=[x_min, x_max],
+        scaleanchor="y",
+        scaleratio=1,
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(visible=False, range=[y_min, y_max], showgrid=False, zeroline=False)
+
+    fig.update_layout(
+        title={
+            "text": "NBA Shot Zones on the Half Court",
+            "font": {"size": 22, "color": "#1f1f1f"},
+            "x": 0,
+            "xanchor": "left",
+        },
+        plot_bgcolor="white",
+        paper_bgcolor="white",
+        showlegend=False,
+        margin=dict(l=40, r=40, t=80, b=80),
+        height=500,
+    )
+
+    return fig
+
+
 def create_distribution_chart(df, title, entity_name="League Average"):
     """Create stacked area chart for shot distribution (League or Player)."""
     fig = go.Figure()
@@ -396,18 +471,18 @@ def create_distribution_chart(df, title, entity_name="League Average"):
     fig.update_layout(
         title={
             'text': title,
-            'font': {'size': 20, 'color': '#1f1f1f'},
+            'font': {'size': 24, 'color': '#1f1f1f'},
             'x': 0,
             'xanchor': 'left'
         },
         xaxis=dict(
             title='Season',
-            title_font=dict(size=14, color='#1f1f1f'),
+            title_font=dict(size=18, color='#1f1f1f'),
             tickangle=-45,
-            tickfont=dict(size=8),
-            tickmode='array',
-            tickvals=seasons,
+            tickfont=dict(size=12),
             type='category',
+            categoryorder='array',
+            categoryarray=SEASONS,  # Use global SEASONS to show full timeline
             automargin=True,
             showgrid=True,
             gridcolor='lightgray',
@@ -415,16 +490,16 @@ def create_distribution_chart(df, title, entity_name="League Average"):
         ),
         yaxis=dict(
             title='Share of FGA',
-            title_font=dict(size=14, color='#1f1f1f'),
+            title_font=dict(size=18, color='#1f1f1f'),
             tickformat='.0%',
-            tickfont=dict(size=12),
+            tickfont=dict(size=14),
             showgrid=True,
             gridcolor='lightgray'
         ),
         legend=dict(
             title='Shot Zone',
-            title_font=dict(size=14),
-            font=dict(size=12),
+            title_font=dict(size=16),
+            font=dict(size=14),
             orientation='v',
             yanchor='top',
             y=1,
@@ -618,6 +693,107 @@ def create_shot_chart(df_shots, selected_season):
     
     return deck
 
+def create_trend_comparison_chart(df_league, df_players, selected_players):
+    """Create a line chart comparing 3-point share trends."""
+    fig = go.Figure()
+    
+    three_pt_zones = ['Left Corner 3', 'Right Corner 3', 'Above the Break 3']
+    all_seasons = SEASONS  # Use full season range for x-axis (axis only)
+    
+    # 1. League Trend (only seasons with data; axis still shows full range)
+    league_3pt = df_league[
+        df_league['SHOT_ZONE_BASIC'].isin(three_pt_zones)
+    ].groupby('SEASON')['FGA_SHARE'].sum().reset_index()
+    
+    fig.add_trace(go.Scatter(
+        x=league_3pt['SEASON'],
+        y=league_3pt['FGA_SHARE'],
+        name='League Average',
+        line=dict(color='black', width=4, dash='dot'),
+        mode='lines+markers',
+        hovertemplate='<b>League Average</b><br>Season: %{x}<br>3PT Share: %{y:.1%}<extra></extra>'
+    ))
+    
+    # 2. Stephen Curry (Always shown if available)
+    curry_df = df_players[df_players['PLAYER_NAME'] == 'Stephen Curry']
+    if not curry_df.empty:
+        curry_3pt = curry_df[
+            curry_df['SHOT_ZONE_BASIC'].isin(three_pt_zones)
+        ].groupby('SEASON')['FGA_SHARE'].sum().reset_index()
+        
+    fig.add_trace(go.Scatter(
+            x=curry_3pt['SEASON'],
+            y=curry_3pt['FGA_SHARE'],
+            name='Stephen Curry',
+            line=dict(color='#FDB927', width=5), # Warriors Gold
+            mode='lines+markers',
+            hovertemplate='<b>Stephen Curry</b><br>Season: %{x}<br>3PT Share: %{y:.1%}<extra></extra>'
+        ))
+        
+    # 3. Other Selected Players
+    colors = ['#E03A3E', '#CE1141', '#007A33', '#552583', '#6F263D'] # Generic team colors
+    for i, player in enumerate(selected_players):
+        if player == 'Stephen Curry': continue
+        
+        p_df = df_players[df_players['PLAYER_NAME'] == player]
+        if p_df.empty: continue
+        
+        p_3pt = p_df[
+            p_df['SHOT_ZONE_BASIC'].isin(three_pt_zones)
+        ].groupby('SEASON')['FGA_SHARE'].sum().reset_index()
+        
+        color = colors[i % len(colors)]
+        fig.add_trace(go.Scatter(
+            x=p_3pt['SEASON'],
+            y=p_3pt['FGA_SHARE'],
+            name=player,
+            line=dict(color=color, width=3),
+            mode='lines+markers',
+            hovertemplate=f'<b>{player}</b><br>Season: %{{x}}<br>3PT Share: %{{y:.1%}}<extra></extra>'
+        ))
+    
+    fig.update_layout(
+        title={
+            'text': 'The 3-Point Revolution: Curry vs. The Field',
+            'font': {'size': 24, 'color': '#1f1f1f'}
+        },
+        xaxis=dict(
+            title='Season',
+            title_font=dict(size=18, color='#1f1f1f'),
+            tickangle=-45,
+            tickfont=dict(size=12),
+            type='category',
+            categoryorder='array',
+            categoryarray=all_seasons,
+            automargin=True,
+            showgrid=True,
+            gridcolor='lightgray'
+        ),
+        yaxis=dict(
+            title='3-Point Attempt Rate (3PAR)',
+            title_font=dict(size=18, color='#1f1f1f'),
+            tickformat='.0%',
+            tickfont=dict(size=14),
+            showgrid=True,
+            gridcolor='lightgray'
+        ),
+        legend=dict(
+            title='Entity',
+            font=dict(size=14),
+            yanchor="top",
+            y=0.99,
+            xanchor="left",
+            x=0.01,
+            bgcolor="rgba(255, 255, 255, 0.8)"
+        ),
+        hovermode='x unified',
+        plot_bgcolor='white',
+        height=600,
+        margin=dict(l=80, r=50, t=100, b=100)
+    )
+    
+    return fig
+
 # ============================================================================
 # MAIN APP
 # ============================================================================
@@ -707,13 +883,19 @@ def main():
             
     # Render chart and insights
     if current_df is not None and not current_df.empty:
-        # Create and display chart
+        # Create and display chart alongside zone legend court
         fig1 = create_distribution_chart(
             current_df, 
             chart_title,
             entity_name=selected_entity
         )
-        st.plotly_chart(fig1, width='stretch')
+
+        col_chart, col_legend = st.columns([2.5, 1.5])
+        with col_chart:
+            st.plotly_chart(fig1, width='stretch')
+        with col_legend:
+            zone_fig = create_zone_legend_court()
+            st.plotly_chart(zone_fig, width='stretch')
         
         # Calculate Key Insights dynamically
         st.subheader(f"📈 Key Insights ({selected_entity})")
@@ -766,7 +948,7 @@ def main():
                 f"{restricted_last:.1%}",
                 f"{((restricted_last - restricted_first)):+.1%} since {first_season}"
             )
-            
+        
         # Show data
         with st.expander(f"📋 View {selected_entity} Data"):
             st.dataframe(current_df.sort_values(['SEASON', 'SHOT_ZONE_BASIC']), width='stretch')
@@ -774,8 +956,28 @@ def main():
     else:
         st.warning(f"Data not available for {selected_entity}. Please refresh to fetch from NBA API.")
     
-    # Visualization 2: Stephen Curry shot chart (Renumbered)
-    st.header("2️⃣ Stephen Curry Shot Chart by Season")
+    # Visualization 2: The Curry Effect Comparison
+    st.header("2️⃣ The 3-Point Revolution: Curry vs. The League")
+    st.markdown("See how Stephen Curry's 3-point volume skyrocketed compared to the league average, driving the modern era's strategic shift.")
+    
+    if df_league is not None and df_players is not None:
+        # Multi-select for other players
+        available_stars = sorted([p for p in df_players['PLAYER_NAME'].unique() if p != 'Stephen Curry'])
+        default_compare = [p for p in ['James Harden', 'LeBron James'] if p in available_stars]
+        
+        comparison_players = st.multiselect(
+            "Compare other stars:", 
+            options=available_stars,
+            default=default_compare
+        )
+        
+        fig2 = create_trend_comparison_chart(df_league, df_players, comparison_players)
+        st.plotly_chart(fig2, width='stretch')
+    else:
+        st.warning("Data not available for comparison chart.")
+
+    # Visualization 3: Stephen Curry shot chart (Renumbered)
+    st.header("3️⃣ Stephen Curry Shot Chart by Season")
     
     if df_curry_shots is not None and not df_curry_shots.empty:
         seasons_available = sorted(df_curry_shots['SEASON'].unique())

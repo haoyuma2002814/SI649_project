@@ -4,35 +4,20 @@ This Streamlit application provides an interactive visualization of NBA shot sel
 
 ## Features
 
-### 📊 Four Main Visualizations
+### 📊 Two Main Interactive Visualizations
 
-1. **League-wide Shot Distribution Timeline** (2000–2025)
-   - Stacked area chart showing how shot selection has evolved across the entire league
-   - Toggle key events (rule changes, strategic shifts) overlay
-   - Interactive tooltips with detailed statistics
+1. **Shot Distribution Evolution** (2000–2025)
+   - **Interactive View Switching**: Seamlessly toggle between "League Average" and individual Star Players (Stephen Curry, LeBron James, etc.) to compare career arcs against league trends.
+   - **Full History**: Visualizes the complete timeline (2000–2025) for all views, allowing you to see exactly when players entered the league and how their style shifted.
+   - **League Context**: When viewing League Average, key historical events (rule changes, strategic shifts) are overlaid on the chart.
+   - **Dynamic Insights**: Automatically calculates key metrics (3-Point Share, Mid-Range Share, Restricted Area Share) and their change over time for the selected entity.
 
-2. **Event-driven Turning Points**
-   - Major rule changes and strategic milestones
-   - Hand-checking rules (2004-05)
-   - "Moreyball" era (2012-13)
-   - Curry's MVP season (2015-16)
-   - Freedom of movement rules (2018-19)
-
-3. **Player-Level Shot Selection Evolution**
-   - Compare shot selection patterns for star players:
-     - Stephen Curry
-     - James Harden
-     - LeBron James
-     - Kevin Durant
-     - DeMar DeRozan
-   - Interactive player selector
-   - See how individual playing styles evolved over time
-
-4. **Stephen Curry Shot Chart by Season**
-   - Visual shot chart showing exact shot locations
-   - Color-coded: Green (made), Red (missed)
-   - Season selector to see evolution over time
-   - Detailed shooting statistics (FG%, 3PT%, etc.)
+2. **Stephen Curry 3D Shot Chart** (Interactive Map)
+   - **3D Heatmap**: Uses **PyDeck** to create a stunning 3D hexagonal heatmap of Stephen Curry's shot locations.
+   - **Height = Frequency**: The height of each hexagonal tower represents the volume of shots taken from that zone.
+   - **Court Overlay**: A detailed NBA half-court layout is drawn directly on the map for precise context.
+   - **All-Time View**: Select any specific season from his career (2009–2025) or view his **"All Seasons"** combined shot chart.
+   - **Interactive Exploration**: Pan, tilt, rotate, and zoom around the court to analyze shooting patterns from any angle.
 
 ## Installation
 
@@ -52,7 +37,7 @@ pip install -r requirements.txt
 Or manually:
 
 ```bash
-pip install streamlit pandas plotly nba_api
+pip install streamlit pandas plotly nba_api pydeck
 ```
 
 2. **Run the application:**
@@ -63,17 +48,17 @@ streamlit run streamlit_app.py
 
 The app will automatically open in your default web browser at `http://localhost:8501`
 
-## First Run
+## First Run & Data
 
 ### Automatic Data Fetching
 
 On first run, the app will automatically fetch data from the NBA API:
 
-- **League data**: ~25 seasons of shot location data (~2-3 minutes)
-- **Player data**: 5 players × 5 seasons (~3-4 minutes)
-- **Curry shot chart**: 5 seasons of detailed shot data (~1-2 minutes)
+- **League data**: 25 seasons of shot location data (~2-3 minutes)
+- **Player data**: Full career data for 5 star players (2000-2025) (~3-5 minutes)
+- **Curry shot chart**: Full career detailed shot data (2009-2025) (~2-3 minutes)
 
-**Total first-run time: ~7-10 minutes**
+**Total first-run time: ~7-12 minutes**
 
 Progress bars will show the fetching status. All data is cached locally for subsequent runs.
 
@@ -91,16 +76,18 @@ Once fetched, data is saved to CSV files:
 ### Sidebar Controls
 
 - **Cache Status**: Check which datasets are cached
-- **Refresh Data**: Update individual datasets from NBA API
-  - Use if you want to include the most recent season
-  - Or if you suspect data is outdated
+- **Refresh Data**: Update individual datasets from NBA API. 
+  - *Note: If you want to see the full history update, click these buttons to fetch the complete dataset.*
 
 ### Interactive Features
 
 - **Hover tooltips**: Detailed information on all charts
 - **Legend toggles**: Click legend items to show/hide zones
 - **Dropdowns**: Select players and seasons
-- **Expandable sections**: View raw data tables
+- **3D Navigation**:
+  - **Left Click + Drag**: Rotate and Tilt
+  - **Right Click + Drag**: Pan
+  - **Scroll**: Zoom
 
 ### Key Insights
 
@@ -132,7 +119,7 @@ pip install nba_api
 - The NBA API may be temporarily unavailable
 - Try refreshing the data later
 
-### Cached data seems outdated
+### Cached data seems outdated or sparse
 
 Use the sidebar "Refresh Data" buttons to fetch fresh data from the API.
 
@@ -150,33 +137,12 @@ Use the sidebar "Refresh Data" buttons to fetch fresh data from the API.
 4. **Compare players** - Switch between players to see different playing styles
 5. **Look for trends** - Notice the decline in mid-range shots and rise of 3-pointers
 
-## Differences from Notebook
-
-This Streamlit app provides the same functionality as the Jupyter notebook but with:
-- ✅ Better interactivity (dropdowns, toggles, selectors)
-- ✅ Automatic data caching
-- ✅ Progress indicators
-- ✅ Cleaner, more polished UI
-- ✅ No code cells to run manually
-- ✅ Easy sharing (just share the URL when deployed)
-
-## Future Enhancements
-
-Possible additions:
-- More players
-- Team-level analysis
-- Additional seasons
-- Export capabilities
-- Advanced filtering options
-- Heat map density plots
-
 ## Credits
 
 - Data: [NBA API](https://github.com/swar/nba_api)
-- Visualization: Plotly
+- Visualization: Plotly & PyDeck
 - Framework: Streamlit
 
 ---
 
 **Enjoy exploring NBA shot evolution! 🏀**
-
