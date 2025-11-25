@@ -879,6 +879,14 @@ def main():
     st.divider()
 
     # Sidebar for data management
+    st.sidebar.markdown("## Authors")
+    st.sidebar.markdown("""
+    **Haoyu Ma**  
+    **Qihang Sun**  
+    *University of Michigan*
+    """)
+    st.sidebar.divider()
+
     st.sidebar.title("⚙️ Data Management")
     
     if not NBA_API_AVAILABLE:
