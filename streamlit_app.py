@@ -831,7 +831,7 @@ def create_trend_comparison_chart(df_league, df_players, selected_players):
         ),
         legend=dict(
             title='Entity',
-            font=dict(size=14),
+            font=dict(size=14, color='#1f1f1f'),
             yanchor="top",
             y=0.99,
             xanchor="left",
@@ -840,6 +840,8 @@ def create_trend_comparison_chart(df_league, df_players, selected_players):
         ),
         hovermode='x unified',
         plot_bgcolor='white',
+        paper_bgcolor='white',
+        font=dict(family="Lato, 'Open Sans', sans-serif", size=13, color='#1f1f1f'),
         height=600,
         margin=dict(l=80, r=50, t=100, b=100)
     )
@@ -984,10 +986,10 @@ def main():
         # Use a slightly wider left panel while keeping the right panel readable
         col_chart, col_legend = st.columns([3, 2])
         with col_chart:
-            st.plotly_chart(fig1, width='stretch')
+            st.plotly_chart(fig1, use_container_width=True, theme=None)
         with col_legend:
             zone_fig = create_zone_legend_court()
-            st.plotly_chart(zone_fig, width='stretch')
+            st.plotly_chart(zone_fig, use_container_width=True, theme=None)
         
         # Calculate Key Insights dynamically
         st.subheader(f"📈 Key Insights ({selected_entity})")
@@ -1043,7 +1045,7 @@ def main():
         
         # Show data
         with st.expander(f"📋 View {selected_entity} Data"):
-            st.dataframe(current_df.sort_values(['SEASON', 'SHOT_ZONE_BASIC']), width='stretch')
+            st.dataframe(current_df.sort_values(['SEASON', 'SHOT_ZONE_BASIC']), use_container_width=True)
             
     else:
         st.warning(f"Data not available for {selected_entity}. Please refresh to fetch from NBA API.")
@@ -1100,7 +1102,7 @@ def main():
         )
         
         fig2 = create_trend_comparison_chart(df_league, df_players, comparison_players)
-        st.plotly_chart(fig2, width='stretch')
+        st.plotly_chart(fig2, use_container_width=True, theme=None)
     else:
         st.warning("Data not available for comparison chart.")
 
@@ -1133,7 +1135,7 @@ def main():
         
         deck = create_shot_chart(df_curry_shots, selected_season)
         if deck:
-            st.pydeck_chart(deck, width="stretch")
+            st.pydeck_chart(deck, use_container_width=True)
             st.caption("Standard NBA half-court mapped to Chase Center, San Francisco. Height represents shot frequency in that zone.")
         else:
             st.warning(f"No shot chart data available for {selected_season}")
@@ -1166,7 +1168,7 @@ def main():
             st.dataframe(
                 season_data[['SEASON', 'SHOT_ZONE_BASIC', 'SHOT_DISTANCE', 'SHOT_TYPE', 
                             'ACTION_TYPE', 'SHOT_MADE_FLAG', 'LOC_X', 'LOC_Y']],
-                width='stretch'
+                use_container_width=True
             )
     else:
         st.warning("Curry shot chart data not available. Please refresh to fetch from NBA API.")
